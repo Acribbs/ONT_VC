@@ -8,7 +8,7 @@ from distutils.version import LooseVersion
 if LooseVersion(setuptools.__version__) < LooseVersion('1.1'):
     print("Version detected:", LooseVersion(setuptools.__version__))
     raise ImportError(
-        "the tallynn requires setuptools 1.1 higher")
+        "the ontvc requires setuptools 1.1 higher")
 
 ########################################################################
 ########################################################################
@@ -17,7 +17,7 @@ IS_OSX = sys.platform == 'darwin'
 ########################################################################
 ########################################################################
 # collect version
-print(sys.path.insert(0, "tallynnn"))
+print(sys.path.insert(0, "ontvc"))
 import version
 
 version = version.__version__

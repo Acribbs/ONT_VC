@@ -61,7 +61,7 @@ def main(argv=None):
 
     # paths to look for pipelines:
     #print(pipelines.__file__)
-    path = os.path.abspath(os.path.dirname(tallynnn.__file__))
+    path = os.path.abspath(os.path.dirname(ontvc.__file__))
     relpath = os.path.abspath("../src")
 
     paths = [path, relpath]
