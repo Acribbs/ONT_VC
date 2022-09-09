@@ -1,0 +1,7 @@
+
+data: 0
+
+reference_fasta: /t1-data/project/cribbslab/shared/resources/index/hg38.fa
+
+minimap2:
+    options: -ax map-ont
