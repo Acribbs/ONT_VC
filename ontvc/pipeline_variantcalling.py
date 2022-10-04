@@ -97,8 +97,86 @@ def run_mapping(infile, outfile):
     P.run(statement)
 
 
+@transform(run_mapping,
+           regex("mapped.dir/(\S+).sam"),
+           r"mapped.dir/\1_sorted.bam")
+def generate_bam(infile, outfile):
+    """Convert sam to bam and sort"""
 
-@follows(run_mapping)
+    bamfile = infile.replace(".sam", ".bam")
+
+    statement = '''samtools view -S -b %(infile)s > %(bamfile)s &&
+                   samtools sort %(bamfile)s -o %(outfile)s &&
+                   samtools index %(outfile)s'''
+
+    P.run(statement)
+
+
+@follows(mkdir("Clair.dir"))
+@transform(generate_bam,
+           regex("mapped.dir/(\S+)_sorted.bam"),
+           r"Clair.dir/\1/full_alignment.vcf.gz")
+def run_clair3(infile, outfile):
+    '''Run the clair3 model for variant calling '''
+
+    outfile_path = outfile.replace('/tmp.txt','')
+
+    statement = '''run_clair3.sh --bam_fn=%(infile)s --ref_fn=%(reference_fasta)s --threads=5 --platform="ont" --model_path=%(clair_model)s --output=%(outfile_path)s && touch %(outfile)s'''
+
+    P.run(statement)
+
+
+@follows(mkdir("filtered_vcf.dir"))
+@transform(run_clair3,
+           regex("Clair.dir/(\S+)/full_alignment.vcf.gz"),
+           r"filtered_vcf.dir/\1_Qual30_full_alignment.vcf.gz")
+def filter_variants(infile, outfile):
+    '''use bcftools to filter variants'''
+
+    statement = '''bcftools filter -O z -o %(outfile)s -i "QUAL>20 & DP>20" %(infile)s'''
+
+    P.run(statement)
+
+
+@follows(mkdir("Sniffles.dir"))
+@transform(generate_bam,
+           regex("mapped.dir/(\S+)_sorted.bam"),
+           r"Sniffles.dir/\1/output.snf")
+def run_sniffles(infile, outfile):
+    '''Run the sniffles for structural variants'''
+
+    outfile_path = outfile.replace('/tmp.txt','')
+    vcf_file = outfile.replace('.snf','.vcf')
+    log = outfile + ".log"
+
+    statement = '''sniffles -i %(infile)s --vcf %(vcf_file)s --snf %(outfile)s --reference %(reference_fasta)s 2> %(log)s'''
+
+    P.run(statement)
+
+
+@merge(run_sniffles,
+       "Sniffles.dir/merged.vcf.gz")
+def merge_sniffles(infiles, outfile):
+    '''Merge snf files into a single merged vcf '''
+
+    infiles = ' '.join(infiles)
+
+    statement = '''sniffles --input %(infiles)s --vcf %(outfile)s'''
+
+    P.run(statement)
+
+
+@transform(run_sniffles,
+           regex("Sniffles.dir/(\S+)/output.vcf"),
+           r"filtered_vcf.dir/\1_sniffles_Qual30_output.vcf.gz")
+def merge_sniffles_variants(infile, outfile):
+    '''use bcftools to filter variants'''
+
+    statement = '''bcftools filter -O z -o %(outfile)s -i "QUAL>20 & DP>20" %(infile)s'''
+
+    P.run(statement)
+
+@follows(run_clair3, run_sniffles)
 def full():
     pass
 
