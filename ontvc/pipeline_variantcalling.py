@@ -92,9 +92,9 @@ def run_mapping(infile, outfile):
     '''Run minimap2 to map the data to genome'''
 
 
-    statement = '''minimap2 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(outfile)s'''
+    statement = '''minimap2 -t 10 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(outfile)s'''
 
-    P.run(statement)
+    P.run(statement, job_threads=10)
 
 
 @transform(run_mapping,
@@ -167,12 +167,14 @@ def merge_sniffles(infiles, outfile):
 
 
 @transform(run_sniffles,
-           regex("Sniffles.dir/(\S+)/output.vcf"),
+           regex("Sniffles.dir/(\S+)/output.snf"),
            r"filtered_vcf.dir/\1_sniffles_Qual30_output.vcf.gz")
 def merge_sniffles_variants(infile, outfile):
     '''use bcftools to filter variants'''
 
-    statement = '''bcftools filter -O z -o %(outfile)s -i "QUAL>20 & DP>20" %(infile)s'''
+    infile = infile.replace('.snf','.vcf')
+
+    statement = '''bcftools filter -O z -o %(outfile)s -i "QUAL>30" %(infile)s'''
 
     P.run(statement)
 
