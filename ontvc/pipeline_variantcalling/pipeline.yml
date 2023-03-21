@@ -5,3 +5,6 @@ reference_fasta: /t1-data/project/cribbslab/shared/resources/index/hg38.fa
 
 minimap2:
     options: -ax map-ont
+
+clair:
+    model: /t1-data/project/cribbslab/shared/resources/ont_models/r1041_e82_400bps_hac_g632
