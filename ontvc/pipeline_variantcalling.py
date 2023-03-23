@@ -128,7 +128,7 @@ def run_clair3(infile, outfile):
 
 @follows(mkdir("filtered_vcf.dir"))
 @transform(run_clair3,
-           regex("Clair.dir/(\S+)/full_alignment.vcf.gz"),
+           regex("Clair.dir/(\S+)/full_alignment.vcf.gz/pileup.vcf.gz"),
            r"filtered_vcf.dir/\1_Qual30_full_alignment.vcf.gz")
 def filter_variants(infile, outfile):
     '''use bcftools to filter variants'''
@@ -178,7 +178,22 @@ def merge_sniffles_variants(infile, outfile):
 
     P.run(statement)
 
-@follows(run_clair3, run_sniffles)
+
+@follows(mkdir("coverage.dir"))
+@transform(generate_bam,
+           regex("mapped.dir/(\S+)_sorted.bam"),
+           r"coverage.dir/\1.mosdepth.summary.txt")
+def mosdepth(infile, outfile):
+    '''Determine the coverage of the bam file'''
+
+    name = outfile.replace(".mosdepth.summary.txt","")
+
+    statement = '''mosdepth %(name)s %(infile)s '''
+
+    P.run(statement)
+
+
+@follows(mosdepth, merge_sniffles_variants, filter_variants)
 def full():
     pass
 
