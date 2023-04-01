@@ -123,7 +123,7 @@ def run_clair3(infile, outfile):
 
     statement = '''run_clair3.sh --bam_fn=%(infile)s --ref_fn=%(reference_fasta)s --threads=5 --platform="ont" --model_path=%(clair_model)s --output=%(outfile_path)s && touch %(outfile)s'''
 
-    P.run(statement)
+    P.run(statement, job_queue='gpu')
 
 
 @follows(mkdir("filtered_vcf.dir"))
