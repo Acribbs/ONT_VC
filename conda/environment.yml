@@ -1,0 +1,20 @@
+name: ontvc
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - cgatcore
+  - pysam
+  - biopython
+  - scipy
+  - pytest
+  - numpy
+  - pandas
+  - python
+  - minimap2
+  - clair3
+  - sniffles
+  - bcftools
+  - samtools
+  - mosdepth

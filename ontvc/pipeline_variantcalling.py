@@ -107,7 +107,9 @@ def generate_bam(infile, outfile):
 
     statement = '''samtools view -S -b %(infile)s > %(bamfile)s &&
                    samtools sort %(bamfile)s -o %(outfile)s &&
-                   samtools index %(outfile)s'''
+                   samtools index %(outfile)s &&
+                   rm -rf %(infile)s &&
+                   touch %(infile)s'''
 
     P.run(statement)
 
