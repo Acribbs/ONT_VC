@@ -94,7 +94,7 @@ def run_mapping(infile, outfile):
 
     statement = '''minimap2 -t 2 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(outfile)s'''
 
-    P.run(statement, job_threads=2)
+    P.run(statement, job_threads=2, job_options='-t 24:00:00')
 
 
 @transform(run_mapping,
@@ -111,7 +111,7 @@ def generate_bam(infile, outfile):
                    rm -rf %(infile)s &&
                    touch %(infile)s'''
 
-    P.run(statement)
+    P.run(statement, job_options='-t 24:00:00')
 
 
 @follows(mkdir("Clair.dir"))
@@ -125,7 +125,7 @@ def run_clair3(infile, outfile):
 
     statement = '''run_clair3.sh --bam_fn=%(infile)s --ref_fn=%(reference_fasta)s --threads=5 --platform="ont" --model_path=%(clair_model)s --output=%(outfile_path)s && touch %(outfile)s'''
 
-    P.run(statement, job_queue='gpu')
+    P.run(statement, job_queue='gpu', job_options='-t 48:00:00')
 
 
 @follows(mkdir("filtered_vcf.dir"))
@@ -137,7 +137,7 @@ def filter_variants(infile, outfile):
 
     statement = '''bcftools filter -O z -o %(outfile)s -i "QUAL>20 & DP>20" %(infile)s'''
 
-    P.run(statement)
+    P.run(statement, job_options='-t 24:00:00')
 
 
 @follows(mkdir("Sniffles.dir"))
@@ -153,7 +153,7 @@ def run_sniffles(infile, outfile):
 
     statement = '''sniffles -i %(infile)s --vcf %(vcf_file)s --snf %(outfile)s --reference %(reference_fasta)s 2> %(log)s'''
 
-    P.run(statement)
+    P.run(statement, job_options='-t 48:00:00')
 
 
 @merge(run_sniffles,
@@ -192,7 +192,7 @@ def mosdepth(infile, outfile):
 
     statement = '''mosdepth %(name)s %(infile)s '''
 
-    P.run(statement)
+    P.run(statement, job_options='-t 24:00:00')
 
 
 @follows(mosdepth, merge_sniffles_variants, filter_variants)
