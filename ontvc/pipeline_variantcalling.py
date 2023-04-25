@@ -92,9 +92,9 @@ def run_mapping(infile, outfile):
     '''Run minimap2 to map the data to genome'''
 
 
-    statement = '''minimap2 -t 10 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(outfile)s'''
+    statement = '''minimap2 -t 2 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(outfile)s'''
 
-    P.run(statement, job_threads=10)
+    P.run(statement, job_threads=2)
 
 
 @transform(run_mapping,
