@@ -92,9 +92,9 @@ def run_mapping(infile, outfile):
     '''Run minimap2 to map the data to genome'''
 
 
-    statement = '''minimap2 -t 2 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(outfile)s'''
+    statement = '''minimap2 -t 4 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(outfile)s'''
 
-    P.run(statement, job_threads=2, job_options='-t 24:00:00')
+    P.run(statement, job_threads=4, job_options='-t 72:00:00')
 
 
 @transform(run_mapping,
@@ -125,7 +125,7 @@ def run_clair3(infile, outfile):
 
     statement = '''run_clair3.sh --bam_fn=%(infile)s --ref_fn=%(reference_fasta)s --threads=5 --platform="ont" --model_path=%(clair_model)s --output=%(outfile_path)s && touch %(outfile)s'''
 
-    P.run(statement, job_queue='gpu', job_options='-t 48:00:00')
+    P.run(statement, job_queue='gpu', job_options='-t 272:00:00')
 
 
 @follows(mkdir("filtered_vcf.dir"))
