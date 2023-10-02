@@ -87,35 +87,25 @@ SEQUENCEFILES = tuple([os.path.join(DATADIR, suffix_name)
 @follows(mkdir("mapped.dir"))
 @transform(SEQUENCEFILES,
            regex("{}/(\S+).fastq.gz".format(DATADIR)),
-         r"mapped.dir/\1.sam")
+         r"mapped.dir/\1_sorted.bam")
 def run_mapping(infile, outfile):
     '''Run minimap2 to map the data to genome'''
 
+    tmp = outfile.replace("_sorted.bam", ".sam")
+    bamfile = tmp.replace(".sam", ".bam")
 
-    statement = '''minimap2 -t 4 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(outfile)s'''
-
-    P.run(statement, job_threads=4, job_options='-t 72:00:00')
-
-
-@transform(run_mapping,
-           regex("mapped.dir/(\S+).sam"),
-           r"mapped.dir/\1_sorted.bam")
-def generate_bam(infile, outfile):
-    """Convert sam to bam and sort"""
-
-    bamfile = infile.replace(".sam", ".bam")
-
-    statement = '''samtools view -S -b %(infile)s > %(bamfile)s &&
+    statement = '''minimap2 -t 4 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(tmp)s &&
+                   samtools view -S -b %(infile)s > %(bamfile)s &&
                    samtools sort %(bamfile)s -o %(outfile)s &&
                    samtools index %(outfile)s &&
                    rm -rf %(infile)s &&
                    touch %(infile)s'''
 
-    P.run(statement, job_options='-t 24:00:00')
+    P.run(statement, job_threads=4, job_options='-t 72:00:00')
 
 
 @follows(mkdir("Clair.dir"))
-@transform(generate_bam,
+@transform(run_mapping,
            regex("mapped.dir/(\S+)_sorted.bam"),
            r"Clair.dir/\1/full_alignment.vcf.gz")
 def run_clair3(infile, outfile):
@@ -125,7 +115,7 @@ def run_clair3(infile, outfile):
 
     statement = '''run_clair3.sh --bam_fn=%(infile)s --ref_fn=%(reference_fasta)s --threads=5 --platform="ont" --model_path=%(clair_model)s --output=%(outfile_path)s && touch %(outfile)s'''
 
-    P.run(statement, job_queue='gpu', job_options='-t 272:00:00')
+    P.run(statement, job_queue='gpu', job_options='-t 24:00:00')
 
 
 @follows(mkdir("filtered_vcf.dir"))
@@ -141,7 +131,7 @@ def filter_variants(infile, outfile):
 
 
 @follows(mkdir("Sniffles.dir"))
-@transform(generate_bam,
+@transform(run_mapping,
            regex("mapped.dir/(\S+)_sorted.bam"),
            r"Sniffles.dir/\1/output.snf")
 def run_sniffles(infile, outfile):
@@ -182,7 +172,7 @@ def merge_sniffles_variants(infile, outfile):
 
 
 @follows(mkdir("coverage.dir"))
-@transform(generate_bam,
+@transform(run_mapping,
            regex("mapped.dir/(\S+)_sorted.bam"),
            r"coverage.dir/\1.mosdepth.summary.txt")
 def mosdepth(infile, outfile):
@@ -195,7 +185,18 @@ def mosdepth(infile, outfile):
     P.run(statement, job_options='-t 24:00:00')
 
 
-@follows(mosdepth, merge_sniffles_variants, filter_variants)
+@transform(run_mapping,
+           regex("mapped.dir/(\S+)_sorted.bam"),
+           r"mapped.dir/\1.bw")
+def run_bamcoverage(infile, outfile):
+    ''' '''
+
+    statement = '''bamCoverage -b %(infile)s -o %(outfile)s '''
+
+    P.run(statement, job_options='-t 24:00:00')
+
+
+@follows(mosdepth, merge_sniffles_variants, filter_variants, run_bamcoverage)
 def full():
     pass
 
