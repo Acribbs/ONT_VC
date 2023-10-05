@@ -1,0 +1,12 @@
+# Mapping options supplied to hisat2
+hisat2_options: -k 2
+
+# Prefix to hisat2 reference genome files to use for mapping (excluding the
+# X.ht2).
+reference_genome_prefix: /project/cribbslab/shared/resources/hisat2/hg38
+
+# Path to reference genome annotations.
+reference_genome_annotations: /project/cribbslab/shared/resources/annotations/hg38_ensembl98/Homo_sapiens.GRCh38.98.gtf.gz
+
+# Boolean for whether paired data is present.
+paired: 1

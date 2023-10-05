@@ -95,13 +95,12 @@ def run_mapping(infile, outfile):
     bamfile = tmp.replace(".sam", ".bam")
 
     statement = '''minimap2 -t 4 %(minimap2_options)s %(reference_fasta)s %(infile)s > %(tmp)s &&
-                   samtools view -S -b %(infile)s > %(bamfile)s &&
+                   samtools view -S -b %(tmp)s > %(bamfile)s &&
                    samtools sort %(bamfile)s -o %(outfile)s &&
                    samtools index %(outfile)s &&
-                   rm -rf %(infile)s &&
-                   touch %(infile)s'''
+                '''
 
-    P.run(statement, job_threads=4, job_options='-t 72:00:00')
+    P.run(statement, job_threads=4, job_options='-t 24:00:00')
 
 
 @follows(mkdir("Clair.dir"))
