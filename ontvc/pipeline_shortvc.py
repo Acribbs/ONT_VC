@@ -165,7 +165,21 @@ def run_bamcoverage(infile, outfile):
     P.run(statement, job_options='-t 24:00:00')
 
 
-@follows(run_featurecounts, run_bamcoverage)
+@follows(mkdir('mutect2.dir'))
+@transform(run_samtools,
+           regex("hisat2.dir/(\S+).sorted.bam"),
+           r"mutect2.dir/\1.vcf.gz")
+def run_mutect2(infile, outfile):
+    ''' '''
+
+    ref = PARAMS['reference_genome']
+
+    statement = '''gakt Mutect2 -R %(ref)s -I %(infile)s
+                   -O %(outfile)s'''
+
+    P.run(statement, job_options='-t 24:00:00')
+
+@follows(run_featurecounts, run_bamcoverage, run_mutect2)
 def full():
     pass
 

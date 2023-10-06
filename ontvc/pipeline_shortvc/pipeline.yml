@@ -5,6 +5,8 @@ hisat2_options: -k 2
 # X.ht2).
 reference_genome_prefix: /project/cribbslab/shared/resources/hisat2/hg38
 
+reference_genome: /project/cribbslab/shared/resources/hisat2/hg38.fa
+
 # Path to reference genome annotations.
 reference_genome_annotations: /project/cribbslab/shared/resources/annotations/hg38_ensembl98/Homo_sapiens.GRCh38.98.gtf.gz
 
@@ -12,3 +14,5 @@ reference_genome_annotations: /project/cribbslab/shared/resources/annotations/hg
 paired: 1
 
 threads: 4
+
+featurecounts_options: -p
