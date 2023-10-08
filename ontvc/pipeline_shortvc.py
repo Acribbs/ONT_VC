@@ -165,19 +165,56 @@ def run_bamcoverage(infile, outfile):
     P.run(statement, job_options='-t 24:00:00')
 
 
-@follows(mkdir('mutect2.dir'))
 @transform(run_samtools,
            regex("hisat2.dir/(\S+).sorted.bam"),
+           r"mutect2.dir/\1.rq.bam")
+def run_addrg(infile, outfile):
+    '''Need to replace the RG tag for gatk '''
+
+    tmp = outfile + ".tmp"
+    tmp2 = outfile + "tmp2"
+    sample = infile.replace("hisat2.dir/", "")
+    sample = sample.replace(".sorted.bam", "")
+
+    statement = '''samtools view -h %(infile)s > %(tmp)s &&
+                   samtools addreplacerg -r ID:S1 -r LB:L1 -r SM:%(sample)s -o %(tmp2)s %(tmp)s &&
+                   samtools view -b %(tmp2)s > %(outfile)s &&
+                   samtools index %(outfile)s &&
+                   rm -rf %(tmp)s &&
+                   rm -rf %(tmp2)s'''
+
+    P.run(statement, job_options='-t 24:00:00')
+
+
+@follows(mkdir('mutect2.dir'))
+@transform(run_addrg,
+           regex("mutect2.dir/(\S+).rq.bam"),
            r"mutect2.dir/\1.vcf.gz")
 def run_mutect2(infile, outfile):
     ''' '''
 
     ref = PARAMS['reference_genome']
 
-    statement = '''gakt Mutect2 -R %(ref)s -I %(infile)s
+    statement = '''gatk Mutect2 -R %(ref)s -I %(infile)s
                    -O %(outfile)s'''
 
     P.run(statement, job_options='-t 24:00:00')
+
+
+@follows(run_mutect2)
+@originate("mutect2.dir/pon.vcf.gz")
+def run_mutect2_panelofnormals(infile, outfile):
+    '''The command from https://gatk.broadinstitute.org/hc/en-us/articles/360037593851-Mutect2
+       and https://gatk.broadinstitute.org/hc/en-us/articles/360037227652-CreateSomaticPanelOfNormals-BETA-
+is used to run the sample against a panel of normals to filtering the variants '''
+
+    ref = PARAMS['reference_genome']
+    pon_db = PARAMS['pon_db']
+
+    statement = '''gatk CreateSomaticPanelOfNormals -R %(ref)s -V gendb://pon_db -O %(outfile)s                   '''
+
+    P.run(statement, job_options='-t 24:00:00')
+
 
 @follows(run_featurecounts, run_bamcoverage, run_mutect2)
 def full():
